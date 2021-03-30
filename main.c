@@ -1,78 +1,90 @@
-//#include <stdio.h>
-//#include "ecs.h"
+#include <stdio.h>
 #include "vector.h"
-#define XXH_INLINE_ALL
-#include "xxhash.h"
+#include "table.h"
+#include "hashmap.h"
 
 int main() {
 
-    typedef struct Position {
-        int x;
-        int y;
-    } Position;
+    /**
+     * test vector
+     */
 
     typedef struct A {
         int x;
         int y;
     } A;
 
-//
-//    world *w = ecs_world_new();
-//
-//    //test ecs_component_register
-//    if (ecs_component_register(w, "Position", sizeof(Position)) == 0
-//        && ecs_component_register(w, "A", sizeof(A)) == 1
-//        && ecs_component_register(w, "A", sizeof(Position)) == -1
-//        && ecs_component_register(w, "", sizeof(Position)) == -1) {
-//        printf("====ecs_component_register=== ok\n");
-//    }
+    vector *v = vector_new(sizeof(A), 0, 20, 1.5f);
 
-    vector * v = vector_new(sizeof(A),0,20,1.5f);
-
-    A a1 = (A){.x = 1, .y=2};
-    for(int i=0;i<1000;i++){
+    A a1 = (A) {.x = 1, .y=1};
+    for (int i = 0; i < 1000; i++) {
         vector_push(v, &a1);
-        printf(",%d",v->capacity);
+        //printf(",%d",v->capacity);
     }
     printf("\n");
-    for(int i=0;i<1000;i++){
-        vector_pop(v,&a1);
-        printf(",%d",v->capacity);
+    for (int i = 0; i < 1000; i++) {
+        vector_pop(v, &a1);
+        //printf(",%d",v->capacity);
     }
-    A a2 = (A){.x = 2, .y=3};
-    A a3 = (A){.x = 3, .y=4};
+
+    A a2 = (A) {.x = 2, .y=2};
+    A a3 = (A) {.x = 3, .y=3};
 
     int a1_index = vector_push(v, &a1);
+    assert(a1_index == 0);
+
     int a2_index = vector_push(v, &a2);
+    assert(a2_index == 1);
+
     int a3_index = vector_push(v, &a3);
-    A * a2_v;
-    vector_get(v, a2_index,&a2_v);
-    A * a3_v;
-    vector_get(v, a3_index,&a2_v);
-    A * a1_v;
-    vector_get(v, a1_index,&a2_v);
+    assert(a3_index == 2);
 
-    //vector_set(v,a2_index,&a1);
+    A a2_v;
+    vector_get(v, a2_index, &a2_v);
+    assert(a2_v.x == a2.x && a2_v.y == a2.y);
+
+    A a3_v;
+    vector_get(v, a3_index, &a3_v);
+    assert(a3_v.x == a3.x && a3_v.y == a3.y);
+
+    A a1_v;
+    vector_get(v, a1_index, &a1_v);
+    assert(a1_v.x == a1.x && a1_v.y == a1.y);
+
+    vector_set(v, a2_index, &a1);
+    A a21_v;
+    vector_get(v, a2_index, &a21_v);
+    assert(a21_v.x == a1.x && a21_v.y == a1.y);
+
+    vector_free(v);
 
 
-//    char * a = malloc(1000);
-//    memcpy(a,&a1,sizeof(A));
-//    memcpy(a + sizeof(A),&a2,sizeof(A));
-//    memcpy(a + 2 * sizeof(A),&a3,sizeof(A));
-//    A * test1 = (A*)a ;
-//    A * test2 = (A*)a + 1;
-//    A * test3 = (A*)a + 2;
+    /**
+     * test hashmap
+     */
+    hashmap *map = hashmap_new(3);
+    int a = 1,temp = 0;
+
+    char s[10][3] = {"cc0","cc1","cc2","cc2","cc4","cc5","cc6","cc7","cc8","cc9"};
+    for(int i=0;i<10;i++){
+        hashmap_put(map, s[i], &a, sizeof(a));
+    }
+
+    for(int i=0;i<10;i++){
+        assert(hashmap_get(map, s[i], &temp) && temp == 1);
+    }
+
+    assert(hashmap_remove(map, "not exit key") != true);
+
+    for(int i=0;i<10;i++){
+        assert(hashmap_remove(map, s[i]));
+    }
+
+    assert(hashmap_get(map, s[0], &temp) == false);
 
 
-    char * data = "13123213";
-    size_t len = strlen(data);
-    uint64_t h = XXH3_64bits(data, len);
 
-    printf("\n%jd",h);
+    hashmap_free(map);
 
-    vector * table = vector_new(sizeof(vector),0,20,1.5f);
-    vector_push(table,v);
-    vector v2;
-    vector_pop(table,&v2);
     return 0;
 }

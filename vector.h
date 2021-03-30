@@ -16,6 +16,11 @@ typedef struct vector {
     float capacity_extend_times;
 } vector;
 
+#define VECTOR_AT(vec_ptr,index) (vector *)(vec_ptr->element + index * vec_ptr->sizeof_element)
+#define VECTOR_COPY_OUT(vec_ptr,index,out_ptr) memcpy(out_ptr, VECTOR_AT(vec_ptr,index), vec_ptr->sizeof_element)
+#define VECTOR_COPY_IN(vec_ptr,index,in_ptr) memcpy(VECTOR_AT(vec_ptr,index), in_ptr, vec_ptr->sizeof_element)
+
+
 vector * vector_new(int sizeof_element, int length, int init_capacity, float capacity_extend_times) {
     assert(sizeof_element > 0);
     if (init_capacity <= 0) {
@@ -88,12 +93,15 @@ int vector_pop(vector *vec,void *element) {
     return vec->element_length;
 }
 
+#define VECTOR_SET()
+
+
 bool vector_set(vector *vec, int index, void *element) {
     assert(vec != NULL);
     assert(element != NULL);
     assert(index >= 0);
     if (index < vec->element_length) {
-        memcpy(vec->element + index * vec->sizeof_element,
+        memcpy(VECTOR_AT(vec,index),
                element, vec->sizeof_element);
         return true;
     }
@@ -122,5 +130,6 @@ bool vector_free(vector *vec) {
     free(vec->element);
     free(vec);
 }
+
 
 #endif
