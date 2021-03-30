@@ -23,14 +23,12 @@ typedef struct key_value key_value;
 typedef struct key_value {
     char key[KEY_LENGTH];
     void *value;
-    int size;
     key_value *next;
 } key_value;
 
-key_value * key_value_new(char *key, void * value, int size){
+key_value * key_value_new(char *key, void * value){
     key_value * kv = realloc(NULL,sizeof(key_value));
     assert(kv!=NULL);
-    kv->size = size;
     strcpy(kv->key,key);
     kv->value = value;
     kv->next = NULL;
@@ -54,7 +52,6 @@ hashmap *hashmap_new(int bit_shift_value) {
             .next = NULL,
             .key = "",
             .value = NULL,
-            .size = 0
     };
     for (int i = 0; i < init_capacity; i++) {
         VECTOR_COPY_IN(map->key_values, i, &kv);
@@ -71,20 +68,20 @@ hashmap *hashmap_new(int bit_shift_value) {
     (key_value *) (map->key_values->element + index * map->key_values->sizeof_element);
 
 
-void hashmap_put(hashmap *map, char *key, void *value, int size) {
+void hashmap_put(hashmap *map, char *key, void *value) {
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     while ((strcmp(key, kv->key) != 0)) {
         if (kv->next == NULL) {
-            kv->next = key_value_new(key,value,size);
+            kv->next = key_value_new(key,value);
         }
         kv = kv->next;
     }
     kv->value = value;
-    kv->size = size;
 }
 
 bool hashmap_contain(hashmap *map, char *key) {
+    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     while ((strcmp(key, kv->key) != 0)) {
@@ -96,19 +93,21 @@ bool hashmap_contain(hashmap *map, char *key) {
     return true;
 }
 
-bool hashmap_get(hashmap *map, char *key, void *value) {
+void * hashmap_get(hashmap *map, char *key) {
+    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     while ((strcmp(key, kv->key) != 0)) {
         if (kv->next == NULL) {
-            return false;
+            return NULL;
         }
         kv = kv->next;
     }
-    return (memcpy(value,kv->value,kv->size) != NULL);
+    return kv->value;
 }
 
 bool hashmap_remove(hashmap *map, char *key) {
+    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     //find key in header
@@ -117,7 +116,6 @@ bool hashmap_remove(hashmap *map, char *key) {
         free(kv);
         strcpy(new_kv->key, key);
         kv->value = new_kv->value;
-        kv->size = new_kv->size;
         kv->next = new_kv->next;
         return true;
     } else {//find key in the next chains
