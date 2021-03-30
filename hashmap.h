@@ -149,7 +149,7 @@ void hashmap_free(hashmap *map) {
         key_value *kv = GET_KV(map, i);
         _hashmap_key_value_free(kv->next);
     }
-    vector_free(map->key_values);
+    VECTOR_FREE(map->key_values);
     free(map);
 }
 
