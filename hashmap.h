@@ -11,17 +11,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
-
 #define XXH_INLINE_ALL
-
 #include "xxhash.h"
-
-#define KEY_LENGTH 50
 
 typedef struct key_value key_value;
 
 typedef struct key_value {
-    char key[KEY_LENGTH];
+    char *key;
     void *value;
     key_value *next;
 } key_value;
@@ -29,7 +25,10 @@ typedef struct key_value {
 key_value * key_value_new(char *key, void * value){
     key_value * kv = realloc(NULL,sizeof(key_value));
     assert(kv!=NULL);
-    strcpy(kv->key,key);
+    kv->key = realloc(NULL,strlen(key)+1);
+    assert(kv->key!=NULL);
+    kv->key = strcpy(kv->key,key);
+    assert(kv->key!=NULL);
     kv->value = value;
     kv->next = NULL;
     return kv;
@@ -81,7 +80,6 @@ void hashmap_put(hashmap *map, char *key, void *value) {
 }
 
 bool hashmap_contain(hashmap *map, char *key) {
-    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     while ((strcmp(key, kv->key) != 0)) {
@@ -94,7 +92,6 @@ bool hashmap_contain(hashmap *map, char *key) {
 }
 
 void * hashmap_get(hashmap *map, char *key) {
-    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     while ((strcmp(key, kv->key) != 0)) {
@@ -107,7 +104,6 @@ void * hashmap_get(hashmap *map, char *key) {
 }
 
 bool hashmap_remove(hashmap *map, char *key) {
-    assert(strlen(key) <= KEY_LENGTH);
     KEY_TO_INDEX(index, map, key);
     key_value *kv = GET_KV(map, index);
     //find key in header
@@ -142,6 +138,7 @@ void _hashmap_key_value_free(key_value * kv) {
             _hashmap_key_value_free(kv->next);
             free(kv);
         } else {
+            free(kv->key);
             free(kv);
         }
     }
