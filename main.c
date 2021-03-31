@@ -2,21 +2,29 @@
 #include "vector.h"
 #include "vector2d.h"
 #include "hashmap.h"
+#include "bitwise.h"
 
+
+typedef struct A {
+    int x;
+    int y;
+} A;
+
+int sort(void * a, void * b){
+    A * a_ptr = (A *)a;
+    A * b_ptr = (A *)b;
+    return a_ptr->x - b_ptr->x;
+}
 
 int main() {
-
 
     /**
      * test vector
      */
 
-    typedef struct A {
-        int x;
-        int y;
-    } A;
 
-    vector *v = vector_new(sizeof(A), 0, 20, 1.5f);
+
+    vector * v = vector_new(sizeof(A), 0, 20, 1.5f);
 
     A a1 = (A) {.x = 1, .y=1};
     for (int i = 0; i < 1000; i++) {
@@ -64,8 +72,37 @@ int main() {
     vector_get(v, a2_index, &a21_v);
     assert(a21_v.x == a1.x && a21_v.y == a1.y);
 
+
+
+
+
+    A a4 = (A) {.x = 4, .y=3};
+    A a5 = (A) {.x = 5, .y=3};
+    A a6 = (A) {.x = 6, .y=3};
+    A a7 = (A) {.x = 7, .y=3};
+
+    vector_push(v, &a7);
+    vector_push(v, &a6);
+    vector_push(v, &a4);
+    vector_push(v, &a5);
+
+    VECTOR_FOR_EACH(v, index, value_ptr){
+        printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr)->x,index,((A *)value_ptr)->y);
+    }
+
+    printf("\n====after sort====\n\n");
+    VECTOR_SORT(v,sort);
+
+    VECTOR_FOR_EACH(v, index, value_ptr1){
+        printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr1)->x,index,((A *)value_ptr1)->y);
+    }
+
     VECTOR_CLEAR(v);
     VECTOR_FREE(v);
+
+
+    printf("\n====test hashmap======\n\n");
+
 
     /**
      * test hashmap
@@ -73,7 +110,20 @@ int main() {
     hashmap *map = hashmap_new(3);
     int a = 1,*temp;
 
-    char s[10][3] = {"cc0","cc1","cc2","cc2","cc4","cc5","cc6","cc7","cc8","cc9"};
+
+    char **s = (char**)malloc(10 * sizeof(char*));
+
+    s[0] = "cc0";
+    s[1] = "cc1";
+    s[2] = "cc2";
+    s[3] = "cc2";
+    s[4] = "cc4";
+    s[5] = "cc5";
+    s[6] = "cc6";
+    s[7] = "cc7";
+    s[8] = "cc8";
+    s[9] = "cc9";
+
     for(int i=0;i<10;i++){
         hashmap_put(map, s[i], &a);
     }
@@ -84,7 +134,11 @@ int main() {
     }
     assert(hashmap_remove(map, "not exit key") != true);
     for(int i=0;i<10;i++){
-        assert(hashmap_remove(map, s[i]));
+        if(i==3){//remove the same key twice
+            assert(!hashmap_remove(map, s[i]));
+        }else{
+            assert(hashmap_remove(map, s[i]));
+        }
     }
     assert(hashmap_get(map, s[0]) == NULL);
 
@@ -143,6 +197,38 @@ int main() {
         assert(v2d->element_length == 9-i);
         printf("\n");
     }
+
+
+
+    /**
+     * test bitwise
+     */
+    bits64 bits = 0b0000000000000000000000000000000000000000000000000000000000010100;
+    bits64 a000 = 0b0000000000000000000000000000000000000000000000000000000000000000;
+    bits64 a001 = 0b0000000000000000000000000000000000000000000000000000000000000100;
+    bits64 a002 = 0b0000000000000000000000000000000000000000000000000000000000010000;
+    bits64 a003 = 0b0000000000000000000000000000000000000000000000000000000000010100;
+    bits64 a004 = 0b0000000000000000000000000000000000000000000000000000000000010101;
+    bits64 a005 = 0b0000000000000000000000000000000000000000000000000000000000010100;
+    assert(bitwise_contain(bits,a001));
+    assert(bitwise_contain(bits,a002));
+    assert(bitwise_contain(bits,a003));
+    assert(!bitwise_contain(bits,a004));
+
+    assert(bitwise_set_true_at(a005,0) == a004);
+    assert(bitwise_set_true_at(a001,4) == bits);
+
+    assert(bitwise_set_false_at(a004,0) == a005);
+    assert(bitwise_set_false_at(bits,4) == a001);
+
+    assert(bitwise_is_false_at(bits,0) == true);
+    assert(bitwise_is_true_at(bits,2) == true);
+
+    assert(bitwise_value_at(bits,0) == false);
+    assert(bitwise_value_at(bits,1) == false);
+    assert(bitwise_value_at(bits,2) == true);
+    assert(bitwise_value_at(bits,3) == false);
+    assert(bitwise_value_at(bits,4) == true);
 
     return 0;
 }

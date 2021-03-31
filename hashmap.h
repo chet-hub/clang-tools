@@ -36,14 +36,14 @@ key_value * key_value_new(char *key, void * value){
 
 typedef struct hashmap {
     vector *key_values;
-    unsigned int bit_shift_value;
+    u32 bit_shift_value;
 } hashmap;
 
-hashmap *hashmap_new(int bit_shift_value) {
+hashmap *hashmap_new(u32 bit_shift_value) {
     assert(bit_shift_value >= 1 && bit_shift_value < 64 );
     hashmap *map = realloc(NULL, sizeof(hashmap));
     assert(map != NULL);
-    int init_capacity = ((int) 2) << bit_shift_value;
+    u32 init_capacity = ((u32) 2) << bit_shift_value;
     map->bit_shift_value = bit_shift_value;
     map->key_values = vector_new(sizeof(key_value), init_capacity, init_capacity, 1.5f);
     assert(map->key_values != NULL);
@@ -52,7 +52,7 @@ hashmap *hashmap_new(int bit_shift_value) {
             .key = "",
             .value = NULL,
     };
-    for (int i = 0; i < init_capacity; i++) {
+    for (u32 i = 0; i < init_capacity; i++) {
         VECTOR_COPY_IN(map->key_values, i, &kv);
     }
     return map;
@@ -60,12 +60,15 @@ hashmap *hashmap_new(int bit_shift_value) {
 
 #define KEY_TO_INDEX(index, map, key) \
     uint64_t hash_value = XXH3_64bits(key, strlen(key)); \
-    int rest_bit = 64 - map->bit_shift_value; \
-    int index =  ( hash_value << rest_bit ) >> rest_bit;
+    u32 rest_bit = 64 - map->bit_shift_value; \
+    u32 index =  ( hash_value << rest_bit ) >> rest_bit;
 
 #define GET_KV(map, index) \
     (key_value *) (map->key_values->element + index * map->key_values->sizeof_element);
 
+#define FREE_KV(kv) \
+    free(kv->key);  \
+    free(kv);
 
 void hashmap_put(hashmap *map, char *key, void *value) {
     KEY_TO_INDEX(index, map, key);
@@ -109,12 +112,12 @@ bool hashmap_remove(hashmap *map, char *key) {
     //find key in header
     if (strcmp(key, kv->key) == 0) {
         key_value *new_kv = kv->next;
-        free(kv);
+        FREE_KV(kv);
         strcpy(new_kv->key, key);
         kv->value = new_kv->value;
         kv->next = new_kv->next;
         return true;
-    } else {//find key in the next chains
+    } else {//to find key in the next chains
         key_value * parent = kv;
         kv = kv->next;
         while (kv!=NULL && (strcmp(key, kv->key) != 0)) {
@@ -124,9 +127,14 @@ bool hashmap_remove(hashmap *map, char *key) {
             parent = kv;
             kv = kv->next;
         }
-        parent->next = kv->next;
-        free(kv);
-        return true;
+        if(kv == NULL){
+            return false;
+        }else{
+            key_value * to_free_value = parent->next;
+            parent->next = kv->next;
+            FREE_KV(to_free_value)
+            return true;
+        }
     }
 }
 
@@ -136,16 +144,15 @@ void _hashmap_key_value_free(key_value * kv) {
     } else {
         if (kv->next != NULL) {
             _hashmap_key_value_free(kv->next);
-            free(kv);
+            FREE_KV(kv);
         } else {
-            free(kv->key);
-            free(kv);
+            FREE_KV(kv);
         }
     }
 }
 
 void hashmap_free(hashmap *map) {
-    for (int i = 0; i < map->key_values->element_length; i++) {
+    for (u32 i = 0; i < map->key_values->element_length; i++) {
         key_value *kv = GET_KV(map, i);
         _hashmap_key_value_free(kv->next);
     }
