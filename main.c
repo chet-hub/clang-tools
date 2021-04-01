@@ -22,8 +22,6 @@ int main() {
      * test vector
      */
 
-
-
     vector * v = vector_new(sizeof(A), 0, 20, 1.5f);
 
     A a1 = (A) {.x = 1, .y=1};
@@ -73,18 +71,25 @@ int main() {
     assert(a21_v.x == a1.x && a21_v.y == a1.y);
 
 
+    VECTOR_CLEAR(v);
 
-
-
+    A a0 = (A) {.x = 0, .y=3};
+    a1 = (A) {.x = 1, .y=3};
+    a2 = (A) {.x = 2, .y=3};
+    a3 = (A) {.x = 3, .y=3};
     A a4 = (A) {.x = 4, .y=3};
     A a5 = (A) {.x = 5, .y=3};
     A a6 = (A) {.x = 6, .y=3};
     A a7 = (A) {.x = 7, .y=3};
 
+    vector_push(v, &a3);
+    vector_push(v, &a2);
+    vector_push(v, &a1);
     vector_push(v, &a7);
     vector_push(v, &a6);
     vector_push(v, &a4);
     vector_push(v, &a5);
+    vector_push(v, &a0);
 
     VECTOR_FOR_EACH(v, index, value_ptr){
         printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr)->x,index,((A *)value_ptr)->y);
@@ -97,7 +102,7 @@ int main() {
         printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr1)->x,index,((A *)value_ptr1)->y);
     }
 
-    VECTOR_CLEAR(v);
+
     VECTOR_FREE(v);
 
 
@@ -197,7 +202,6 @@ int main() {
         assert(v2d->element_length == 9-i);
         printf("\n");
     }
-
 
 
     /**

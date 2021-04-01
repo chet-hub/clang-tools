@@ -141,15 +141,13 @@ typedef int (*sort_function)(void *element_a, void * element_b);
 
 int partition(vector *vec, int low, int high, void *temp, sort_function fun) {
     void *pivot = VECTOR_AT(vec, high); // pivot
-    int i =  low ; // Index of smaller element and indicates the right position of pivot found so far
+    int i =  low ;
     for (int j = low; j <= high ; j++) {
-        // If current element is smaller than the pivot
         if (fun(VECTOR_AT(vec, j),pivot) < 0 ) {
             SWAP(vec, i, j, temp);
-            i++; // increment index of smaller element
+            i++;
         }
     }
-    //swap(&arr[i + 1], &arr[high]);
     SWAP(vec, i, high, temp);
     return i;
 }

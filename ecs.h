@@ -18,6 +18,7 @@
 
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef int64_t s64;
 
 typedef struct component_type {
     char *name;
@@ -25,31 +26,38 @@ typedef struct component_type {
     u32 index;
 } component_type;
 
+typedef struct archetype_row {
+    bool used;
+    bool deleted;
+} archetype_row;
+
+typedef struct archetype_column{
+    u32 component_index;
+    vector * data;
+} archetype_column;
+
 typedef struct archetype {
-    char *name;
     u64 bitset_Id;
     u32 index;
-    u32 length;
-    vector2d *components
+    vector *archetype_row;
+    vector *archetype_column;
 } archetype;
 
 typedef struct entity_Id {
-    u32 archetype_index;
-    u32 component_index;
+    u32 archetype_Id;
     u32 entity_index;
 } entity_Id;
 
-typedef struct input_component {
-    void *components;
-    u32 component_index;
-    u32 archetype_index;
-} input_component;
+typedef struct run_object {
+    void *function;
+    void *param_length;
+    vector *params;
+} run_object;
 
 typedef struct system_type {
     void *function;
-    char *phrase;
+    int phrase;
     u64 bitset_Id;
-    vector2d *input_components;
 } system_type;
 
 typedef struct world {
@@ -59,8 +67,10 @@ typedef struct world {
     vector *component_types;
     //register systems
     vector *system_types;
-    //quick query
+    //quick query map
     hashmap *map;
+    //system run object
+    vector *run_object;
 } world;
 
 world *ecs_world_new() {
@@ -77,7 +87,11 @@ world *ecs_world_new() {
     return w;
 }
 
-void ecs_component_register(world *world, char *name, u32 componentSize) {
+u32 ecs_component_register(world *world, char *name, u32 componentSize) {
+    component_type *cop = (component_type *) hashmap_get(map, name);
+    if (cop != NULL) {
+        return cop->index;
+    }
     component_type ct = {
             .index = world->component_types->element_length,
             .name = realloc(NULL, strlen(name) + 1),
@@ -87,50 +101,61 @@ void ecs_component_register(world *world, char *name, u32 componentSize) {
     assert(ct.name != NULL);
     VECTOR_PUSH(world->component_types, &ct);
     hashmap_put(map, name, VECTOR_AT(world->component_types, ct.index));
+    return world->component_types->element_length - 1;
 }
 
-void ecs_archetype_register(world *world, char *archetype_name, char **component_names, u32 size) {
+s64 ecs_archetype_find(world *world, char **component_names, u32 size) {
     bits64 bitset = 0;
     for (int i = 0; i < size; i++) {
         component_type *ct = (component_type *) hashmap_get(world->map, *(component_names + i));
         assert(ct != NULL);
         BITWISE_SET_TRUE_AT(bitset, ct->index);
     }
+    s64 result = -1;
+    VECTOR_FOR_EACH(world->archetypes, index, art_ptr) {
+        archetype *current = (archetype *) art_ptr;
+        if (current->bitset_Id == bitset) {
+            result = current->index;
+        }
+    }
+    return result;
+}
+
+u32 ecs_archetype_entity_add(world *world, u32 archetype_index) {
+    archetype *art = VECTOR_AT(world->archetypes, archetype_index);
+    VECTOR_FOR_EACH(art->archetype_row, index, status_ptr) {
+        entity_status *en = (entity_status *) status_ptr;
+        if (en->used == false) {
+            en->used = true;
+            return index;
+        }
+    }
+    VECTOR_PUSH(art->archetype_row, &(entity_status) {
+            .used = true,
+            .deleted = false,
+    });
+
+    VECTOR_FOR_EACH(art->archetype_column, column, component_ptr){
+        archetype_column * row = (archetype_column * rom)component_ptr;
+        component_type * ct = (component_type *)VECTOR_AT(world->component_types,row->component_index);
+
+        vector_push(row->data,NULL) //todo
+    }
+    return art->archetype_row->element_length - 1;
+}
+
+u32 ecs_archetype_register(world *world, char **component_names, u32 size) {
     archetype art = {
             .index = world->archetypes->element_length,
-            .name = realloc(NULL, strlen(archetype_name) + 1),
             .bitset_Id = bitset,
-            .length = 0,
-            .components = vector2d_new(size, 0, 1.5f);
+            .archetype_column = vector_new(sizeof(archetype_column), 0, 10, 1.5f),
+            .archetype_row = vector_new(sizeof(entity_status), 0, 0, 1.5f),
     }
-    art.name = strcpy(ct.name, archetype_name);
-    assert(art.name != NULL);
     VECTOR_PUSH(world->archetypes, &art);
-    hashmap_put(map, archetype_name, VECTOR_AT(world->archetypes, art.index));
+    return world->archetypes->element_length - 1;
 }
 
-void SYSTEM_INPUT_NEW(world *world, vector2d *input_components, bits64 input_bit, u32 input_size) {
-    VECTOR_FOR_EACH(world->archetypes, index, art, {
-        archetype *art_ptr = (archetype *) art;
-        if (BITWISE_COVER(art_ptr->bitset_Id, input_bit)) {
-            vector2d_row_push(input_components, sizeof(input_component), 0, input_size, 1.5f);
-            for (int i = 0; i < sizeof(bits64) && input_size > 0; i++) {
-                if(BITWISE_IS_TRUE_AT(input_bit,i)){
-                    input_size --;
-                    input_component inputComponent = {
-                            .component_index = i,
-                            .archetype_index = art_ptr->index,
-                    };
-                    vector2d_row_element_push(input_components,input_components->element_length,&inputComponent);
-                }
-            }
-        }
-    })
-
-    VECTOR_PUSH(systemInput, sys_input);
-}
-
-void ecs_system_register(world *world, char *phrase, void *function, char **component_names, u32 size) {
+void ecs_system_register(world *world, int phrase, void *function, char **component_names, u32 size) {
     bits64 bitset = 0;
     for (int i = 0; i < size; i++) {
         component_type *ct = (component_type *) hashmap_get(world->map, *(component_names + i));
@@ -138,38 +163,48 @@ void ecs_system_register(world *world, char *phrase, void *function, char **comp
         BITWISE_SET_TRUE_AT(bitset, ct->index);
     }
     system_type systemType = {
-            .phrase = realloc(NULL, strlen(phrase) + 1),
+            .phrase = phrase,
             .bitset_Id = bitset,
             .function = function,
-            .input_components = vector2d_new(0, 5, 1.5f),
     };
-    systemType.phrase = strcpy(systemType.phrase, phrase);
-    assert(systemType.phrase != NULL);
     VECTOR_PUSH(world->system_types, &systemType);
-    hashmap_put(world->map,phrase,VECTOR_AT(world->system_types, world->system_types->element_length - 1));
-    SYSTEM_INPUT_NEW(world, systemType.input_components, bitset, size);
 }
 
-
-void ecs_run(world *world,) {
-    //init
-    system_type * init_functions = hashmap_get(world->map,"init");
-    //update
-    system_type * update_functions = hashmap_get(world->map,"update");
-    //finish
-    system_type * finish_functions = hashmap_get(world->map,"finish");
-
-
-
-}
-
-
-void *ecs_entity_new(char *archetype_name) {
+void ecs_run_objects_new(world *world, system_type *systemType) {
     //todo
 }
 
-void *ecs_entity_remove(char *archetype_name) {
+void ecs_system_type_run(system_type *systemType) {
     //todo
+}
+
+int ecs_system_sort(void *a, void *b) {
+    return ((system_type *) a)->phrase - ((system_type *) b)->phrase;
+}
+
+void ecs_run(world *world) {
+    VECTOR_SORT(world->system_types, ecs_system_sort);
+    assert(world->system_types->element_length >= 3);
+    //todo
+}
+
+entity_Id ecs_entity_new(world *world, char **component_names, u32 size) {
+    s64 result = ecs_archetype_find(world,component_names,size);
+    u32 art_index = (result > 0) ? (u32) result : ecs_archetype_register();
+    entity_Id Id;
+    Id.archetype_Id = art_index;
+    Id.entity_index = ecs_archetype_entity_add(world,art_index);
+    return Id;
+}
+
+bool ecs_entity_remove(world *world, entity_Id entityId) {
+    archetype *art = VECTOR_AT(world->archetypes, entityId.archetype_Id);
+    if (entityId.entity_index < art->archetype_row->element_length && entityId.entity_index >= 0) {
+        entity_status *en = (entity_status *) VECTOR_AT(art->archetype_row, entityId.entity_index);
+        en->used = false;
+        return true;
+    }
+    return false;
 }
 
 void *ecs_set_component(entity_Id Id, char *component_name, void *component) {
