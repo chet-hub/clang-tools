@@ -145,7 +145,7 @@ u32 ecs_archetype_register(world *world, char **component_names, u32 size) {
         if (BITWISE_IS_TRUE_AT(bitset, i)) {
             component_type *ct = VECTOR_AT(world->component_types, i);
             //todo
-            hashmap_put(art.archetype_column_map,i,vector_new(ct->component_size, 0, 10, 1.5));
+            hashmap_put(art.archetype_column_map,&i, sizeof(int),vector_new(ct->component_size, 0, 10, 1.5));
         }
     }
 
@@ -194,7 +194,7 @@ bool *ecs_set_component(entity_Id Id, char *component_name, void *component) {
     archetype *art = VECTOR_AT(world->archetypes, Id.archetype_Id);
     archetype_row *row = VECTOR_AT(art->archetype_rows, Id.entity_index);
     component_type *ct = (component_type *) hashmap_get(world->world, component_name);
-    archetype_column *p = hashmap_get(art->archetype_column_map,ct->index);
+    archetype_column *p = hashmap_get(art->archetype_column_map,&(ct->index), sizeof(u32));
     VECTOR_SET(p, Id.entity_index, component);
 }
 
@@ -218,7 +218,7 @@ void ecs_run_objects_renew(world *world) {
             if(BITWISE_COVER(art->bitset_Id,st->bitset_Id){
                 VECTOR_FOR_EACH(st->args_component_index,i,ct_index_ptr){
                     int * ind = (int *)ct_index_ptr;
-                    archetype_column *ac = hashmap_get(art->archetype_column_map,ind);
+                    archetype_column *ac = hashmap_get(art->archetype_column_map,&ind,sizeof(int));
                     VECTOR_PUSH(ro.params,ac);
                 }
             }
