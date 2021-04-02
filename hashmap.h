@@ -17,17 +17,18 @@
 typedef struct key_value key_value;
 
 typedef struct key_value {
-    char *key;
+    void *key;
+    int key_size;
     void *value;
     key_value *next;
 } key_value;
 
-key_value * key_value_new(char *key, void * value){
+key_value * key_value_new(void *key,int key_size, void * value){
     key_value * kv = realloc(NULL,sizeof(key_value));
     assert(kv!=NULL);
-    kv->key = realloc(NULL,strlen(key)+1);
+    kv->key = realloc(NULL,key_size);
     assert(kv->key!=NULL);
-    kv->key = strcpy(kv->key,key);
+    kv->key = memcpy(kv->key,key,key_size);
     assert(kv->key!=NULL);
     kv->value = value;
     kv->next = NULL;
@@ -49,7 +50,7 @@ hashmap *hashmap_new(u32 bit_shift_value) {
     assert(map->key_values != NULL);
     key_value kv = {
             .next = NULL,
-            .key = "",
+            .key = NULL,
             .value = NULL,
     };
     for (u32 i = 0; i < init_capacity; i++) {
@@ -58,8 +59,8 @@ hashmap *hashmap_new(u32 bit_shift_value) {
     return map;
 }
 
-#define KEY_TO_INDEX(index, map, key) \
-    uint64_t hash_value = XXH3_64bits(key, strlen(key)); \
+#define KEY_TO_INDEX(index, map, key, key_size) \
+    uint64_t hash_value = XXH3_64bits(key, key_size); \
     u32 rest_bit = 64 - map->bit_shift_value; \
     u32 index =  ( hash_value << rest_bit ) >> rest_bit;
 
@@ -70,22 +71,33 @@ hashmap *hashmap_new(u32 bit_shift_value) {
     free(kv->key);  \
     free(kv);
 
-void hashmap_put(hashmap *map, char *key, void *value) {
-    KEY_TO_INDEX(index, map, key);
+void hashmap_put(hashmap *map, void *key,int key_size, void *value) {
+    KEY_TO_INDEX(index, map, key,key_size);
     key_value *kv = GET_KV(map, index);
-    while ((strcmp(key, kv->key) != 0)) {
+    if(kv->key == NULL){
+        kv->key = realloc(NULL,key_size);
+        kv->key = memcpy(kv->key,key,key_size);
+        assert(kv->key!=NULL);
+        kv->value = value;
+        return;
+    }
+    while ((memcmp(key, kv->key,key_size) != 0)) {
         if (kv->next == NULL) {
-            kv->next = key_value_new(key,value);
+            kv->next = key_value_new(key,key_size,value);
+            return;
         }
         kv = kv->next;
     }
     kv->value = value;
 }
 
-bool hashmap_contain(hashmap *map, char *key) {
-    KEY_TO_INDEX(index, map, key);
+bool hashmap_contain(hashmap *map, void *key,int key_size) {
+    KEY_TO_INDEX(index, map, key,key_size);
     key_value *kv = GET_KV(map, index);
-    while ((strcmp(key, kv->key) != 0)) {
+    if(kv->key == NULL){
+        return false;
+    }
+    while ((memcmp(key, kv->key,key_size) != 0)) {
         if (kv->next == NULL) {
             return false;
         }
@@ -94,10 +106,13 @@ bool hashmap_contain(hashmap *map, char *key) {
     return true;
 }
 
-void * hashmap_get(hashmap *map, char *key) {
-    KEY_TO_INDEX(index, map, key);
+void * hashmap_get(hashmap *map, void *key,int key_size) {
+    KEY_TO_INDEX(index, map, key,key_size);
     key_value *kv = GET_KV(map, index);
-    while ((strcmp(key, kv->key) != 0)) {
+    if(kv->key == NULL){
+        return NULL;
+    }
+    while ((memcmp(key, kv->key,key_size) != 0)) {
         if (kv->next == NULL) {
             return NULL;
         }
@@ -106,21 +121,29 @@ void * hashmap_get(hashmap *map, char *key) {
     return kv->value;
 }
 
-bool hashmap_remove(hashmap *map, char *key) {
-    KEY_TO_INDEX(index, map, key);
+bool hashmap_remove(hashmap *map, void *key,int key_size) {
+    KEY_TO_INDEX(index, map, key,key_size);
     key_value *kv = GET_KV(map, index);
     //find key in header
-    if (strcmp(key, kv->key) == 0) {
+    if(kv->key == NULL){
+        return false;
+    }
+    if (memcmp(key, kv->key,key_size) == 0) {
         key_value *new_kv = kv->next;
-        FREE_KV(kv);
-        strcpy(new_kv->key, key);
+        if(new_kv == NULL){
+            kv->key = NULL;
+            kv->value = NULL;
+            kv->next = NULL;
+            return true;
+        }
+        kv->key = new_kv->key;
         kv->value = new_kv->value;
         kv->next = new_kv->next;
         return true;
     } else {//to find key in the next chains
         key_value * parent = kv;
         kv = kv->next;
-        while (kv!=NULL && (strcmp(key, kv->key) != 0)) {
+        while (kv!=NULL && (memcmp(key, kv->key,key_size) != 0)) {
             if (kv->next == NULL) {
                 return false;
             }

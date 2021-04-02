@@ -130,22 +130,22 @@ int main() {
     s[9] = "cc9";
 
     for (int i = 0; i < 10; i++) {
-        hashmap_put(map, s[i], &a);
+        hashmap_put(map, s[i], sizeof(int),&a);
     }
 
     for (int i = 0; i < 10; i++) {
-        temp = hashmap_get(map, s[i]);
+        temp = hashmap_get(map, s[i],sizeof(int));
         assert(temp != NULL && *temp == 1);
     }
-    assert(hashmap_remove(map, "not exit key") != true);
+    assert(hashmap_remove(map, "not exit key", sizeof("not exit key")) != true);
     for (int i = 0; i < 10; i++) {
         if (i == 3) {//remove the same key twice
-            assert(!hashmap_remove(map, s[i]));
+            assert(!hashmap_remove(map, s[i],sizeof(int)));
         } else {
-            assert(hashmap_remove(map, s[i]));
+            assert(hashmap_remove(map, s[i],sizeof(int)));
         }
     }
-    assert(hashmap_get(map, s[0]) == NULL);
+    assert(hashmap_get(map, s[0],sizeof(int)) == NULL);
 
     hashmap_free(map);
 
