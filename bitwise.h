@@ -6,11 +6,8 @@
 #define ECS_BITWISE_H
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 
 
 typedef uint64_t bits64;

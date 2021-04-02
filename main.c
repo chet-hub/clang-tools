@@ -10,9 +10,9 @@ typedef struct A {
     int y;
 } A;
 
-int sort(void * a, void * b){
-    A * a_ptr = (A *)a;
-    A * b_ptr = (A *)b;
+int sort(void *a, void *b) {
+    A *a_ptr = (A *) a;
+    A *b_ptr = (A *) b;
     return a_ptr->x - b_ptr->x;
 }
 
@@ -22,7 +22,7 @@ int main() {
      * test vector
      */
 
-    vector * v = vector_new(sizeof(A), 0, 20, 1.5f);
+    vector *v = vector_new(sizeof(A), 0, 20, 1.5f);
 
     A a1 = (A) {.x = 1, .y=1};
     for (int i = 0; i < 1000; i++) {
@@ -45,13 +45,13 @@ int main() {
 
 
     assert(vector_push(v, &a1));
-    int a1_index = v->element_length -1;
+    int a1_index = v->element_length - 1;
 
     assert(vector_push(v, &a2));
-    int a2_index = v->element_length -1;
+    int a2_index = v->element_length - 1;
 
     assert(vector_push(v, &a3));
-    int a3_index = v->element_length -1;
+    int a3_index = v->element_length - 1;
 
     A a2_v;
     vector_get(v, a2_index, &a2_v);
@@ -91,15 +91,15 @@ int main() {
     vector_push(v, &a5);
     vector_push(v, &a0);
 
-    VECTOR_FOR_EACH(v, index, value_ptr){
-        printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr)->x,index,((A *)value_ptr)->y);
+    VECTOR_FOR_EACH(v, index, value_ptr) {
+        printf("v[%d].x = %d, v[%d].y = %d\n", index, ((A *) value_ptr)->x, index, ((A *) value_ptr)->y);
     }
 
     printf("\n====after sort====\n\n");
-    VECTOR_SORT(v,sort);
+    VECTOR_SORT(v, sort);
 
-    VECTOR_FOR_EACH(v, index, value_ptr1){
-        printf("v[%d].x = %d, v[%d].y = %d\n",index,((A *)value_ptr1)->x,index,((A *)value_ptr1)->y);
+    VECTOR_FOR_EACH(v, index, value_ptr1) {
+        printf("v[%d].x = %d, v[%d].y = %d\n", index, ((A *) value_ptr1)->x, index, ((A *) value_ptr1)->y);
     }
 
 
@@ -113,10 +113,10 @@ int main() {
      * test hashmap
      */
     hashmap *map = hashmap_new(3);
-    int a = 1,*temp;
+    int a = 1, *temp;
 
 
-    char **s = (char**)malloc(10 * sizeof(char*));
+    char **s = (char **) malloc(10 * sizeof(char *));
 
     s[0] = "cc0";
     s[1] = "cc1";
@@ -129,19 +129,19 @@ int main() {
     s[8] = "cc8";
     s[9] = "cc9";
 
-    for(int i=0;i<10;i++){
+    for (int i = 0; i < 10; i++) {
         hashmap_put(map, s[i], &a);
     }
 
-    for(int i=0;i<10;i++){
+    for (int i = 0; i < 10; i++) {
         temp = hashmap_get(map, s[i]);
         assert(temp != NULL && *temp == 1);
     }
     assert(hashmap_remove(map, "not exit key") != true);
-    for(int i=0;i<10;i++){
-        if(i==3){//remove the same key twice
+    for (int i = 0; i < 10; i++) {
+        if (i == 3) {//remove the same key twice
             assert(!hashmap_remove(map, s[i]));
-        }else{
+        } else {
             assert(hashmap_remove(map, s[i]));
         }
     }
@@ -152,54 +152,54 @@ int main() {
     /**
      * test table
      */
-    vector2d * v2d = vector2d_new(0,10,1.5f);
+    vector2d *v2d = vector2d_new(0, 10, 1.5f);
     assert(v2d->element_length == 0);
 
-    for(int i=0;i<10;i++){
-        vector2d_row_push(v2d,sizeof(int),0,10,1.5f);
-        for(int j=0;j<10;j++){
-            vector2d_row_element_push(v2d,i,&j);
-            printf("%d,",j);
+    for (int i = 0; i < 10; i++) {
+        vector2d_row_push(v2d, sizeof(int), 0, 10, 1.5f);
+        for (int j = 0; j < 10; j++) {
+            vector2d_row_element_push(v2d, i, &j);
+            printf("%d,", j);
         }
         printf("\n");
-        assert(v2d->element_length == i+1);
+        assert(v2d->element_length == i + 1);
     }
     assert(v2d->element_length == 10);
     printf("\n");
 
-    int temp_value=0;
-    for(int i=0;i<10;i++){
-        for(int j=0;j<10;j++){
-            vector2d_get(v2d,j,i,&temp_value);
-            printf("%d,",temp_value);
+    int temp_value = 0;
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            vector2d_get(v2d, j, i, &temp_value);
+            printf("%d,", temp_value);
         }
         printf("\n");
     }
 
     printf("\n");
 
-    temp_value=0;
-    for(int i=0;i<10;i++){
-        for(int j=0;j<10;j++){
-            vector2d_get(v2d,j,i,&temp_value);
+    temp_value = 0;
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            vector2d_get(v2d, j, i, &temp_value);
             temp_value++;
-            vector2d_set(v2d,j,i,&temp_value);
-            printf("%d,",temp_value);
+            vector2d_set(v2d, j, i, &temp_value);
+            printf("%d,", temp_value);
         }
         printf("\n");
     }
 
     printf("\n");
 
-    for(int i=0;i<10;i++){
+    for (int i = 0; i < 10; i++) {
         vector temp_row;
-        vector2d_row_pop(v2d,&temp_row);
-        for(int j=0;j<10;j++){
-            vector2d_row_pop(&temp_row,&temp_value);
-            printf("%d,",temp_value);
+        vector2d_row_pop(v2d, &temp_row);
+        for (int j = 0; j < 10; j++) {
+            vector2d_row_pop(&temp_row, &temp_value);
+            printf("%d,", temp_value);
         }
         assert(temp_row.element_length == 0);
-        assert(v2d->element_length == 9-i);
+        assert(v2d->element_length == 9 - i);
         printf("\n");
     }
 
@@ -214,25 +214,35 @@ int main() {
     bits64 a003 = 0b0000000000000000000000000000000000000000000000000000000000010100;
     bits64 a004 = 0b0000000000000000000000000000000000000000000000000000000000010101;
     bits64 a005 = 0b0000000000000000000000000000000000000000000000000000000000010100;
-    assert(bitwise_contain(bits,a001));
-    assert(bitwise_contain(bits,a002));
-    assert(bitwise_contain(bits,a003));
-    assert(!bitwise_contain(bits,a004));
+    assert(bitwise_contain(bits, a001));
+    assert(bitwise_contain(bits, a002));
+    assert(bitwise_contain(bits, a003));
+    assert(!bitwise_contain(bits, a004));
 
-    assert(bitwise_set_true_at(a005,0) == a004);
-    assert(bitwise_set_true_at(a001,4) == bits);
+    assert(bitwise_set_true_at(a005, 0) == a004);
+    assert(bitwise_set_true_at(a001, 4) == bits);
 
-    assert(bitwise_set_false_at(a004,0) == a005);
-    assert(bitwise_set_false_at(bits,4) == a001);
+    assert(bitwise_set_false_at(a004, 0) == a005);
+    assert(bitwise_set_false_at(bits, 4) == a001);
 
-    assert(bitwise_is_false_at(bits,0) == true);
-    assert(bitwise_is_true_at(bits,2) == true);
+    assert(bitwise_is_false_at(bits, 0) == true);
+    assert(bitwise_is_true_at(bits, 2) == true);
 
-    assert(bitwise_value_at(bits,0) == false);
-    assert(bitwise_value_at(bits,1) == false);
-    assert(bitwise_value_at(bits,2) == true);
-    assert(bitwise_value_at(bits,3) == false);
-    assert(bitwise_value_at(bits,4) == true);
+    assert(bitwise_value_at(bits, 0) == false);
+    assert(bitwise_value_at(bits, 1) == false);
+    assert(bitwise_value_at(bits, 2) == true);
+    assert(bitwise_value_at(bits, 3) == false);
+    assert(bitwise_value_at(bits, 4) == true);
+
+
+
+    /*
+     * memcpy
+     */
+    long aa = 2;
+    long * result  = memset(&aa,0,sizeof(long));
+
+    printf("\n\n%ld",*result);
 
     return 0;
 }

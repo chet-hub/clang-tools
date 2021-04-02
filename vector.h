@@ -77,6 +77,10 @@ vector *vector_new(u32 sizeof_element, u32 length, u32 init_capacity, float capa
         return v;
     }
 }
+#define VECTOR_PUSH_NULL(vec) \
+    vector_reallocate(vec, true),\
+    (memset(vec->element + (vec->element_length++) * vec->sizeof_element, \
+    0, vec->sizeof_element) != NULL)
 
 #define VECTOR_PUSH(vec, push_element) \
     vector_reallocate(vec, true),\
