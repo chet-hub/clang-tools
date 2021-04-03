@@ -183,5 +183,9 @@ void hashmap_free(hashmap *map) {
     free(map);
 }
 
+#define HASHMAP_FOR_EACH(map,kv) \
+    VECTOR_FOR_EACH(map->key_values, index_for_the_element_of_vector, key_value_ptr_for_the_element) \
+        for(key_value * kv = (key_value *)key_value_ptr_for_the_element;kv!=NULL && kv->key != NULL;kv = kv->next)
+
 
 #endif //ECS_HASHMAP_H

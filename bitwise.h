@@ -12,7 +12,7 @@
 
 typedef uint64_t bits64;
 
-#define BITWISE_COVER(bits,b) ((bits | b) == bits)
+#define BITWISE_IS_COVER(bits,b) ((bits | b) == bits)
 
 #define BITWISE_SET_TRUE_AT(bits,index) (bits | (((bits64)1) << index))
 

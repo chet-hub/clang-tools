@@ -78,14 +78,14 @@ vector *vector_new(u32 sizeof_element, u32 length, u32 init_capacity, float capa
     }
 }
 #define VECTOR_PUSH_NULL(vec) \
-    vector_reallocate(vec, true),\
+    (vector_reallocate(vec, true),\
     (memset(vec->element + (vec->element_length++) * vec->sizeof_element, \
-    0, vec->sizeof_element) != NULL)
+    0, vec->sizeof_element) != NULL))
 
 #define VECTOR_PUSH(vec, push_element) \
-    vector_reallocate(vec, true),\
+    (vector_reallocate(vec, true),\
     (memcpy(vec->element + (vec->element_length++) * vec->sizeof_element, \
-    push_element, vec->sizeof_element) != NULL)
+    push_element, vec->sizeof_element) != NULL))
 
 bool vector_push(vector *vec, void *element) {
     assert(vec != NULL);
