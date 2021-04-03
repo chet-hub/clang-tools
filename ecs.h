@@ -44,13 +44,13 @@ typedef struct entity_Id {
     u32 entity_index;
 } entity_Id;
 
-typedef void (*system_function)(archetype_column * column);
+typedef void (*system_function)(archetype_column ** column);
 
 typedef struct run_object {
     int phrase;
     system_function *function;
     int param_length;
-    vector *params;
+    vector *columns;
 } run_object;
 
 typedef struct system_type {
@@ -121,7 +121,6 @@ u32 ecs_archetype_entity_add(world *world, u32 archetype_index) {
     VECTOR_PUSH(art->archetype_rows, &art_row);
     HASHMAP_FOR_EACH(art->archetype_column_map, kv) {
             vector *component_data_array = (vector *) kv->value;
-            VECTOR_PUSH_NULL(component_data_array);
             VECTOR_PUSH_NULL(component_data_array);
         }
     return art->archetype_rows->element_length - 1;
@@ -221,7 +220,7 @@ void ecs_run_objects_renew(world *world) {
                 .phrase = st->phrase,
                 .function = st->function,
                 .param_length = st->args_component_index->element_length,
-                .params = vector_new(sizeof(archetype_column *), 0, 5, 1.5f),
+                .columns = vector_new(sizeof(archetype_column *), 0, 6, 1.5f),
         };
         VECTOR_PUSH(world->run_objects, &ro);
         VECTOR_FOR_EACH(world->archetypes, i, archetype_ptr) {
@@ -231,7 +230,7 @@ void ecs_run_objects_renew(world *world) {
                     u32 *ind = (u32 *) ct_index_ptr;
                     archetype_column *ac = hashmap_get(art->archetype_column_map, ind, sizeof(u32));
                     assert(ac != NULL);
-                    VECTOR_PUSH(ro.params, ac);
+                    VECTOR_PUSH(ro.columns, &ac);
                 }
             }
         }
@@ -243,11 +242,10 @@ void ecs_run(world *world) {
     ecs_run_objects_renew(world);
     VECTOR_FOR_EACH(world->run_objects, index, run_object_ptr) {
         run_object *ro = (run_object *) run_object_ptr;
-        VECTOR_FOR_EACH(ro->params, i, archetype_column_ptr) {
-            archetype_column * column = (archetype_column * )archetype_column_ptr;
+        for(int i=0;i<ro->columns->element_length;i+=ro->param_length){
             system_function fn = ro->function;
-            fn(column);
-            //i = i + ro->param_length + 1;
+            archetype_column ** columns_start = VECTOR_AT(ro->columns,i);
+            fn(columns_start);
         }
     }
 }

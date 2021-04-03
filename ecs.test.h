@@ -14,21 +14,39 @@ void print_map(world *w) {
 }
 
 
-void length_height_position_function(archetype_column * columns){
-    vector * length_column = VECTOR_AT(columns,0);
-    vector * height_column = VECTOR_AT(columns,1);
-    vector * position_column = VECTOR_AT(columns, 2);
-    int count = length_column->element_length;
-    for(int i=0;i<count;i++){
-        int * length = VECTOR_AT(length_column,i);
-        int * height = VECTOR_AT(height_column,i);
-        A * position = VECTOR_AT(position_column,i);
+void length_height_position_function(archetype_column ** columns){
+    printf("------length_height_position_function------\n");
+    for(int count = (* columns)->element_length,i=0;i<count;i++){
+        int * length = (int *)VECTOR_AT((*(columns+0)),i);
+        int * height = (int *)VECTOR_AT((*(columns+1)),i);
+        A * position = (A *)VECTOR_AT((*(columns+1)),i);
         printf("[%d] length=%d, height=%d, position.x=%d ,position.y=%d\n",
                i, *length,*height,position->x,position->y);
     }
-
-
+    printf("------------\n");
 }
+
+void length_function(archetype_column ** columns){
+    printf("------length_function------\n");
+    for(int count = (* columns)->element_length,i=0;i<count;i++){
+        int * length = (int *)VECTOR_AT((*(columns+0)),i);
+        printf("[%d] length=%d, height=%d, position.x=%d ,position.y=%d\n",
+               i, *length);
+    }
+    printf("------------\n");
+}
+
+void length_height_function(archetype_column ** columns){
+    printf("------length_height_function------\n");
+    for(int count = (* columns)->element_length,i=0;i<count;i++){
+        int * length = (int *)VECTOR_AT((*(columns+0)),i);
+        int * height = (int *)VECTOR_AT((*(columns+1)),i);
+        printf("[%d] length=%d, height=%d, position.x=%d ,position.y=%d\n",
+               i, *length,*height);
+    }
+    printf("------------\n");
+}
+
 
 
 void ecs_test() {
@@ -76,9 +94,11 @@ void ecs_test() {
 
     assert(w->archetypes->element_length == 4);
 
-    ecs_system_register(w, 0, length_height_position_function, (char *[]) {"length", "height", "position"}, 3);
-//    ecs_system_register(w, 1, length_height_function, (char *[]){"length", "height", "position"}), 3);
-//    ecs_system_register(w, 2, height_function, (char *[]){"length", "height", "position"}), 3);
+    ecs_system_register(w, 0, length_function, (char *[]){"length"}, 1);
+    ecs_system_register(w, 1, length_height_function, (char *[]){"length", "height"}, 2);
+    ecs_system_register(w, 2, length_height_position_function, (char *[]) {"length", "height", "position"}, 3);
+
+    assert(w->system_types->element_length == 3);
 
     ecs_run(w);
 
